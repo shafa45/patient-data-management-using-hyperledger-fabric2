@@ -27,6 +27,7 @@ const Doctor_Admin_ProfileCard: React.FC<profileCard> = ({
   isProfile,
   isDoctor,
 }) => {
+  console.log("username", username, "isAccessGranted", isAccessGranted);
   return (
     <div className="flex mt-12 justify-center">
       <div className="sm:w-full p-4 md:p-8 max-w-sm bg-white border border-gray-200 rounded-lg shadow dark:bg-gray-800 dark:border-gray-700">

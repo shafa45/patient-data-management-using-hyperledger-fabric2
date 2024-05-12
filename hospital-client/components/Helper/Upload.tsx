@@ -3,7 +3,7 @@ import { Uploader } from 'uploader'; // Installed by "react-uploader".
 
 export const Upload: React.FC<{ handleFile: Function }> = ({ handleFile }) => {
   const uploader = Uploader({
-    apiKey: 'public_12a1yvnD9L5kWm7ooYG8cpfGQbCA', // Get production API keys from Bytescale
+    apiKey: 'public_kW15c4413W3gta4bDSEkCKKsicsD', // Get production API keys from Bytescale
   });
 
   // Configuration options: https://www.bytescale.com/docs/upload-widget/frameworks/react#customize

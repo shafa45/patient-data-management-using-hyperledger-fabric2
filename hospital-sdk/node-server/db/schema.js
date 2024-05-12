@@ -41,6 +41,12 @@ const userDetailsSchema = new mongoose.Schema({
   },
   prescriptions: {
     type: Array
+  },
+  prescriptionsToDoctors: {
+    type: Object
+  },
+  viewAccess: {
+    type: Array
   }
 });
 

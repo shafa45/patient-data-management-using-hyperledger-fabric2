@@ -32,6 +32,8 @@ export interface PatientDetailsUpdateByDoctor
   age: string;
   patientId: string;
   phoneNumber: string
+  // disabledUpdate?: boolean;
+  prescriptionId: string;
 }
 
 export interface PatientPrescritionDetailsUpdateByDoctor extends DoctorUpdatePatientRecords {
@@ -70,4 +72,5 @@ export interface PatientPersonalDetails {
   bloodGroup: string;
   permissionGranted: string[];
   prescriptions: string[];
+  prescriptionsToDoctors?: any;
 }

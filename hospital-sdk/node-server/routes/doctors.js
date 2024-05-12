@@ -4,6 +4,7 @@ const {
   updatePatientMedicalDetails,
   getDoctorById,
   getPatientMedicalReport,
+  getAllReadOnlyPrescriptions,
 } = require("../controllers/doctors");
 
 const router = express.Router();
@@ -38,5 +39,11 @@ router.get(
   authenticateJWT,
   getDoctorById
 );
+
+router.get(
+  "/prescriptions/all/read_only",
+  authenticateJWT,
+  getAllReadOnlyPrescriptions
+)
 
 module.exports = router;

@@ -48,7 +48,7 @@ const getPatientById = async (req, res) => {
   //   : res.status(200).send(JSON.parse(response));
 };
 
-const getPrescriptionById = async (req, res) => {
+const getPrescriptionById = async (req, res, prescId) => {
   // User role from the request header is validated
   const userRole = req.headers.role;
   const isValidate = await validateRole(
@@ -58,7 +58,7 @@ const getPrescriptionById = async (req, res) => {
   );
   if (isValidate) return res.status(401).json({ message: "Unauthorized Role" });
 
-  const prescriptionId = req.params.prescriptionId;
+   prescriptionId = req.params.prescriptionId || prescId;
   // Set up and connect to Fabric Gateway
   const networkObj = await network.connectToNetwork(req.headers.username);
   if (networkObj.error) return res.status(400).send(networkObj.error);
@@ -75,6 +75,7 @@ const getPrescriptionById = async (req, res) => {
     ? res.status(400).send(response.error)
     : res.status(200).send(JSON.parse(response));
 };
+
 
 /**
  * @param  {Request} req Body must be a json, role in the header and patientId in the url
@@ -206,7 +207,7 @@ const getPrescriptionHistoryById = async (req, res) => {
   const prescriptionId = req.params.prescriptionId
   console.log("prescriptionId", prescriptionId)
   const isValidate = await validateRole(
-    [ROLE_PATIENT],
+    [ROLE_PATIENT, ROLE_DOCTOR],
     userRole,
     res
   );
@@ -272,47 +273,73 @@ const grantAccessToDoctor = async (req, res) => {
   const userRole = req.headers.role;
   const isValidate = await validateRole([ROLE_PATIENT], userRole, res);
   if (isValidate) return res.status(401).json({ message: "Unauthorized Role" });
-
   const patientId = req.headers.username;
   const doctorId = req.params.doctorId;
   const prescriptionId = patientId + ":" + doctorId;
+  let prescriptionExist = false;
   let args = { patientId: patientId, doctorId: doctorId, prescriptionId: prescriptionId };
-  args = [JSON.stringify(args)];
-  // Set up and connect to Fabric Gateway
-  const networkObj = await network.connectToNetwork(req.headers.username);
-  if (networkObj.error) return res.status(400).send(networkObj.error);
-  console.log("Invoking smart  createPrescription")
-  const response1 = await network.invoke(
-    networkObj,
-    false,
-    capitalize(userRole) + "Contract:createPrescription",
-    args
-  );
-  if(response1.error) {
-    return  res.status(500).send(response1.error);
+  try {
+    const networkObj = await network.connectToNetwork(req.headers.username);
+    if (networkObj.error) return res.status(400).send(networkObj.error);
+    // Invoke the smart contract function
+    console.log("Invoking patient readPrescription contract")
+    const response = await network.invoke(
+      networkObj,
+      true,
+      capitalize(userRole) + "Contract:readPrescription",
+      prescriptionId
+    );
+    if(response.error) {
+      throw new Error(response.error)
+    }
+    prescriptionExist = true;
   }
-  // Invoke the smart contract function
-  console.log("Invoking smart  grantAccessToDoctor")
-  const response2 = await network.invoke(
-    networkObj,
-    false,
-    capitalize(userRole) + "Contract:grantAccessToDoctor",
-    args
-  );
-  if(response2.error) {
-    return  res.status(500).send(response2.error);
+  catch(err) {
+    console.log("Error", err)
+    args = [JSON.stringify(args)];
+    // Set up and connect to Fabric Gateway
+    const networkObj = await network.connectToNetwork(req.headers.username);
+    if (networkObj.error) return res.status(400).send(networkObj.error);
+    console.log("Invoking smart  createPrescription")
+    const response1 = await network.invoke(
+      networkObj,
+      false,
+      capitalize(userRole) + "Contract:createPrescription",
+      args
+    );
+    if(response1.error) {
+      return  res.status(500).send(response1.error);
+    }
   }
-  
-    // const patient = UserDetails.updateOne({ username: patientId }, 
-    //     { $push: { permissionGranted: doctorId} });
-    // if (patient.error) {
-    //   return res.status(500).send(patient)
-    // }
-    const patient = await UserDetails.updateOne({ username: patientId },
-      { $push: { permissionGranted: doctorId, prescriptions: prescriptionId } });
-    if (patient.error) 
-      res.status(500).send(patient);
-     res.status(200).send(`Access granted to ${doctorId}`);
+  finally {
+    // Invoke the smart contract function
+    const networkObj = await network.connectToNetwork(req.headers.username);
+    if (networkObj.error) return res.status(400).send(networkObj.error);
+    args = [JSON.stringify(args)];
+    console.log("Invoking smart  grantAccessToDoctor")
+    const response2 = await network.invoke(
+      networkObj,
+      false,
+      capitalize(userRole) + "Contract:grantAccessToDoctor",
+      args
+    );
+    if(response2.error) {
+      console.log("response2", response2)
+      return  res.status(500).send(response2.error);
+    }
+    
+      // const patient = UserDetails.updateOne({ username: patientId }, 
+      //     { $push: { permissionGranted: doctorId} });
+      // if (patient.error) {
+      //   return res.status(500).send(patient)
+      // }
+      const patient = await UserDetails.updateOne({ username: patientId },
+        { $push: { permissionGranted: doctorId, prescriptions: prescriptionId } });
+      if (patient.error) 
+        res.status(500).send(patient);
+       res.status(200).send(`Access granted to ${doctorId}`);
+  }
+ 
 };
 
 const updatePrescriptionMedicalDetails = async (req, res) => {
@@ -419,6 +446,66 @@ const getAllPrescriptions = async (req, res) => {
   //   : res.status(200).send(response);
 }
 
+const grantViewAccessToDoctor = async (req, res) => {
+  // User role from the request header is validated
+  const userRole = req.headers.role;
+  const isValidate = await validateRole([ROLE_PATIENT], userRole, res);
+  if (isValidate) return res.status(401).json({ message: "Unauthorized Role" });
+  const {doctorId, patientId, prescriptionId} = req.body;
+  // update patient to have a field list of doctors
+  /**"prescriptionsToDoctors": {
+    "pat3:doc1": ["doc3"]
+} */
+
+// update patient
+const updatedPatient = await UserDetails.updateOne(
+  { username: patientId },
+  { $push: { [`prescriptionsToDoctors.${prescriptionId}`]: doctorId } }
+);
+console.log("updatedPatient", updatedPatient)
+if (updatedPatient.nModified === 0) {
+  return res.status(500).send({ error: 'Failed to update patient' });
+}
+
+// update doctor
+const updatedDoctor = await UserDetails.updateOne(
+  { username: doctorId },
+  { $push: { viewAccess: prescriptionId } }
+);
+if (updatedDoctor.nModified === 0) {
+  return res.status(500).send({ error: 'Failed to update doctor' });
+}
+
+res.status(200).send(`Access granted to ${doctorId}`);
+}
+
+const revokeViewAccessFromDoctor = async (req, res) => {
+  const userRole = req.headers.role;
+  const isValidate = await validateRole([ROLE_PATIENT], userRole, res);
+  if (isValidate) return res.status(401).json({ message: "Unauthorized Role" });
+  const {doctorId, patientId, prescriptionId} = req.body;
+
+// update patient
+const updatedPatient = await UserDetails.updateOne(
+  { username: patientId },
+  { $pull: { [`prescriptionsToDoctors.${prescriptionId}`]: doctorId } }
+);
+if (updatedPatient.nModified === 0) {
+  return res.status(500).send({ error: 'Failed to update patient' });
+}
+
+// update doctor
+const updatedDoctor = await UserDetails.updateOne(
+  { username: doctorId },
+  { $pull: { viewAccess: prescriptionId } }
+);
+if (updatedDoctor.nModified === 0) {
+  return res.status(500).send({ error: 'Failed to update doctor' });
+}
+
+res.status(200).send(`Access revoked from ${doctorId}`);;
+}
+
 module.exports = {
   revokeAccessFromDoctor,
   grantAccessToDoctor,
@@ -429,5 +516,7 @@ module.exports = {
   updatePatientPersonalDetails,
   getAllPrescriptions,
   getPrescriptionHistoryById,
-  updatePrescriptionMedicalDetails
+  updatePrescriptionMedicalDetails,
+  grantViewAccessToDoctor,
+  revokeViewAccessFromDoctor
 };

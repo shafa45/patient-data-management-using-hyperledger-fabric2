@@ -283,6 +283,7 @@ class PatientContract extends PrimaryContract {
     // unique doctorIDs in permissionGranted
     if (!prescription.permissionGranted.includes(doctorId)) {
       prescription.permissionGranted.push(doctorId);
+      prescription.doctorId = doctorId;
       prescription.changedBy = patientId;
     }
     console.log("Prescription permission granted");
@@ -306,12 +307,12 @@ class PatientContract extends PrimaryContract {
 
     // const patient = await this.readPatient(ctx, patientId);
     // Remove the doctor if existing
-    // if (patient.permissionGranted.includes(doctorId)) {
-    //   patient.permissionGranted = patient.permissionGranted.filter(
-    //     (doctor) => doctor !== doctorId
-    //   );
-    //   patient.changedBy = patientId;
-    // }
+    if (prescription.permissionGranted.includes(doctorId)) {
+      prescription.permissionGranted = prescription.permissionGranted.filter(
+        (doctor) => doctor !== doctorId
+      );
+      prescription.changedBy = patientId;
+    }
     prescription.doctorId = null;
     const buffer = Buffer.from(JSON.stringify(prescription));
     // Update the ledger with updated permissionGranted

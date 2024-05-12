@@ -11,6 +11,7 @@ export const doctor = createSlice({
     speciality: "",
     hospitalId: getUserDetails().hospitalId || "",
     patients: [],
+    prescriptions: [],
   },
   reducers: {
     isPending: (state) => {
@@ -32,6 +33,9 @@ export const doctor = createSlice({
     getPatientsUnderDoctor: (state, actions) => {
       state.patients = actions.payload;
     },
+    getReadOnlyPrescriptionsUnderDoctor: (state, actions) => {
+      state.prescriptions = actions.payload;
+    }
   },
 });
 

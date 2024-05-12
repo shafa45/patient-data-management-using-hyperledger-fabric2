@@ -14,7 +14,8 @@ import Loader from "../Helper/Loader";
 
 const PatientsUnderDoctor: React.FC<{
   patientDetail: PatientDetailsUpdateByDoctor;
-}> = ({ patientDetail }) => {
+  disabledUpdate?: boolean;
+}> = ({ patientDetail, disabledUpdate }) => {
   const dispatch = useAppDispatch();
   const [isOpen, setIsOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
@@ -92,12 +93,14 @@ if (loading)
                 >
                   View History
                 </button>
-                <button
-                  onClick={openModal}
-                  className="sm:ml-4 text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:outline-none focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800"
-                >
-                  Update Details
-                </button>
+                {!disabledUpdate && (
+                   <button
+                   onClick={openModal}
+                   className="sm:ml-4 text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:outline-none focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800"
+                 >
+                   Update Details
+                 </button>
+                )}
               </div>
             </div>
             <div className="flex  justify-center gap-12 flex-col sm:flex-row">
@@ -201,7 +204,7 @@ if (loading)
                 leaveTo="opacity-0 scale-95"
               >
                 <Dialog.Panel className="transform  rounded-2xl text-left shadow-xl transition-all m-3 overflow-auto">
-                  <PatientHistoryRecords patientId={patientDetail.patientId} />
+                  <PatientHistoryRecords patientId={patientDetail.patientId} prescriptionId={patientDetail.prescriptionId} />
                 </Dialog.Panel>
               </Transition.Child>
             </div>

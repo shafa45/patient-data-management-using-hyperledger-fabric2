@@ -1,6 +1,12 @@
-const  Bytescale =  require("@bytescale/sdk");
-const { ROLE_DOCTOR, capitalize, validateRole } = require("../utils/utils.js");
-const network = require("../../fabric-network/app.js");
+const Bytescale = require('@bytescale/sdk');
+const {
+  ROLE_DOCTOR,
+  capitalize,
+  validateRole,
+  ROLE_ADMIN,
+} = require('../utils/utils.js');
+const network = require('../../fabric-network/app.js');
+const { UserDetails } = require('../db/schema.js');
 
 /**
  * @param  {Request} req Body must be a json, role in the header and patientId in the url
@@ -11,9 +17,9 @@ const updatePatientMedicalDetails = async (req, res) => {
   // User role from the request header is validated
   const userRole = req.headers.role;
   const isValidate = await validateRole([ROLE_DOCTOR], userRole, res);
-  if (isValidate) return res.status(401).json({ message: "Unauthorized Role" });
+  if (isValidate) return res.status(401).json({ message: 'Unauthorized Role' });
   let args = req.body;
-  const prescriptionId = req.params.patientId + ":" + req.headers.username;
+  const prescriptionId = req.params.patientId + ':' + req.headers.username;
   args.prescriptionId = prescriptionId;
   args.changedBy = req.headers.username;
   args.doctorId = req.headers.username;
@@ -25,12 +31,12 @@ const updatePatientMedicalDetails = async (req, res) => {
   const response = await network.invoke(
     networkObj,
     false,
-    capitalize(userRole) + "Contract:updatePatientMedicalDetails",
+    capitalize(userRole) + 'Contract:updatePatientMedicalDetails',
     args
   );
   response.error
     ? res.status(500).send(response.error)
-    : res.status(200).send("Successfully Updated Patient Details.");
+    : res.status(200).send('Successfully Updated Patient Details.');
 };
 
 /**
@@ -59,16 +65,15 @@ const getPatientMedicalReport = async (req, res) => {
   // response.error
   //   ? res.status(500).send(response.error)
   //   : res.status(200).send(response);
-  
-  const response =  
-  Bytescale.UrlBuilder.url({
-    accountId: "FW25bzs",
+
+  const response = Bytescale.UrlBuilder.url({
+    accountId: 'FW25bzs',
     filePath: reportId,
   });
 
-  console.log("response", response)
+  console.log('response', response);
   return res.status(200).send(response);
-}
+};
 
 /**
  * @param  {Request} req role in the header and hospitalId, doctorId in the url
@@ -79,15 +84,15 @@ const getDoctorById = async (req, res) => {
   // User role from the request header is validated
   const userRole = req.headers.role;
   const isValidate = await validateRole([ROLE_DOCTOR], userRole, res);
-  if (isValidate) return res.status(401).json({ message: "Unauthorized Role" });
+  if (isValidate) return res.status(401).json({ message: 'Unauthorized Role' });
   const hospitalId = parseInt(req.params.hospitalId);
   // Set up and connect to Fabric Gateway
   const userId =
     hospitalId === 1
-      ? "hosp1admin"
+      ? 'hosp1admin'
       : hospitalId === 2
-      ? "hosp2admin"
-      : "hosp3admin";
+      ? 'hosp2admin'
+      : 'hosp3admin';
   const doctorId = req.headers.username;
   const networkObj = await network.connectToNetwork(userId);
   if (networkObj.error) return res.status(400).send(networkObj.error);
@@ -106,4 +111,41 @@ const getDoctorById = async (req, res) => {
       );
 };
 
-module.exports = { getDoctorById, updatePatientMedicalDetails, getPatientMedicalReport };
+const getAllReadOnlyPrescriptions = async (req, res) => {
+  try {
+    let userRole = req.headers.role;
+    const isValidate = await validateRole([ROLE_DOCTOR], userRole, userRole);
+    if (isValidate)
+      return res.status(401).json({ message: 'Unauthorized Role' });
+    userRole = ROLE_ADMIN;
+    const doctorId = req.headers.username;
+    const doctor = await UserDetails.findOne({ username: doctorId });
+    const prescriptionIds = doctor.viewAccess;
+    console.log('prescriptionIds', prescriptionIds);
+    let prescriptions = [];
+    console.log('prescriptionIds', prescriptionIds);
+    for (let i = 0; i < prescriptionIds.length; i++) {
+      const networkObj = await network.connectToNetwork(doctorId);
+      if (networkObj.error) return res.status(400).send(networkObj.error);
+      const response = await network.invoke(
+        networkObj,
+        true,
+        capitalize(userRole) + 'Contract:readPrescription',
+        prescriptionIds[i]
+      );
+      const parsedResponse = await JSON.parse(response);
+      prescriptions.push(parsedResponse);
+    }
+    res.status(200).send(prescriptions);
+  } catch (error) {
+    console.log(error);
+    res.status(500).send(error);
+  }
+};
+
+module.exports = {
+  getDoctorById,
+  updatePatientMedicalDetails,
+  getPatientMedicalReport,
+  getAllReadOnlyPrescriptions,
+};

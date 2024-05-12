@@ -10,7 +10,9 @@ const {
   getPrescriptionById,
   getAllPrescriptions,
   getPrescriptionHistoryById,
-  updatePrescriptionMedicalDetails
+  updatePrescriptionMedicalDetails,
+  grantViewAccessToDoctor,
+  revokeViewAccessFromDoctor
 } = require("../controllers/patients");
 
 const router = express.Router();
@@ -69,6 +71,16 @@ router.patch(
   authenticateJWT,
   updatePrescriptionMedicalDetails
 );
+router.patch(
+  "/prescriptions/grant",
+  authenticateJWT,
+  grantViewAccessToDoctor
+)
+router.patch(
+  "/prescriptions/revoke",
+  authenticateJWT,
+  revokeViewAccessFromDoctor
+)
 
 // router.get(
 //   "/prescriptions/_all",

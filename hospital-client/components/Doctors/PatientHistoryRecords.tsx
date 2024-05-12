@@ -7,8 +7,9 @@ import { PatientHistory } from "@/types/patient";
 import { capitalize, convertTimestamp } from "@/utils/convertTime";
 import DocViewer, { DocViewerRenderers } from "@cyntler/react-doc-viewer";
 
-const PatientHistoryRecords: React.FC<{ patientId: string }> = ({
+const PatientHistoryRecords: React.FC<{ patientId: string, prescriptionId: any }> = ({
   patientId,
+  prescriptionId
 }) => {
   const [patientHistory, setPatientHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,7 +20,7 @@ const PatientHistoryRecords: React.FC<{ patientId: string }> = ({
     try {
       setLoading(true);
       const response = await axiosInstance.get(
-        `${API_BASE_URL}/patients/${patientId}/history`
+        `${API_BASE_URL}/patients/prescription/${prescriptionId}/history`
       );
       setPatientHistory(response.data);
     } catch (error) {
@@ -59,7 +60,7 @@ const PatientHistoryRecords: React.FC<{ patientId: string }> = ({
         <table className="table-auto min-w-950 overflow-auto">
           <thead>
             <tr>
-              {Object.keys(patientHistory[0]).map(
+              {patientHistory?.length && Object.keys(patientHistory[0]).map(
                 (title: string, index: number) => {
                   if (["firstName", "lastName", "age", "bloodGroup", "phoneNumber", "patientId", "doctorId"].includes(title)) return;
                   return <th key={index}>{capitalize(title)}</th>;

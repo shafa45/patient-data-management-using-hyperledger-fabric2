@@ -48,3 +48,25 @@ export const getPatientsUnderDoctor = createAsyncThunk(
     }
   }
 );
+
+export const getReadOnlyPrescriptionsUnderDoctor = createAsyncThunk(
+  "doctor/getReadOnlyPrescriptionsUnderDoctor",
+  async (_, thunkAPI) => {
+    try {
+      thunkAPI.dispatch(doctor.actions.isPending());
+      const response = await axiosInstance.get(
+        `${API_BASE_URL}/doctors/prescriptions/all/read_only`
+      );
+      thunkAPI.dispatch(doctor.actions.getReadOnlyPrescriptionsUnderDoctor(response.data));
+    } catch (error) {
+      thunkAPI.dispatch(
+        doctor.actions.isError(
+          "Fetching Patients Under Doctor Failed. Please Try Again.."
+        )
+      );
+      console.error(error, "error");
+    } finally {
+      thunkAPI.dispatch(doctor.actions.isFullfilled());
+    }
+  }
+);

@@ -76,11 +76,21 @@ export const navbarRoutes = (isLoggedIn: boolean, role: string) => {
     current: false,
   }
 
+  const readOnlyPrescription = {
+    name: "Read Only Prescriptions",
+    href: "/doctor/prescriptions",
+    icon: {
+      default: "fal fa-file-prescription",
+      active: "fas fa-file-prescription",
+    },
+    current: false,
+  }
+
   if (!isLoggedIn) return [{ ...HomePath }];
 
   if (role === ROLE_PATIENT) return [HomePath, myProfile, Hospitals, Prescription];
 
-  if (role === ROLE_DOCTOR) return [HomePath, myProfile, Patients];
+  if (role === ROLE_DOCTOR) return [HomePath, myProfile, Patients, readOnlyPrescription];
 
   if (role === ROLE_ADMIN) return [HomePath, myProfile, Patients, Doctors];
 
