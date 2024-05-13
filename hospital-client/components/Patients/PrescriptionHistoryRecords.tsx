@@ -59,7 +59,7 @@ const PrescriptionHistoryRecords: React.FC<{ prescriptionId: string }> = ({
         <table className="table-auto min-w-950 overflow-auto">
           <thead>
             <tr>
-              {Object.keys(prescriptionHistory[0]).map(
+              {prescriptionHistory?.length > 0 && Object.keys(prescriptionHistory[0]).map(
                 (title: string, index: number) => {
                   if (["firstName", "lastName", "age", "bloodGroup", "phoneNumber", "patientId", "doctorId"].includes(title)) return;
                   return <th key={index}>{capitalize(title)}</th>;

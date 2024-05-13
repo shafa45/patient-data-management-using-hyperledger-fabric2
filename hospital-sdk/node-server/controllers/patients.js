@@ -278,6 +278,7 @@ const grantAccessToDoctor = async (req, res) => {
   const prescriptionId = patientId + ":" + doctorId;
   let prescriptionExist = false;
   let args = { patientId: patientId, doctorId: doctorId, prescriptionId: prescriptionId };
+  args = [JSON.stringify(args)];
   try {
     const networkObj = await network.connectToNetwork(req.headers.username);
     if (networkObj.error) return res.status(400).send(networkObj.error);
@@ -296,7 +297,6 @@ const grantAccessToDoctor = async (req, res) => {
   }
   catch(err) {
     console.log("Error", err)
-    args = [JSON.stringify(args)];
     // Set up and connect to Fabric Gateway
     const networkObj = await network.connectToNetwork(req.headers.username);
     if (networkObj.error) return res.status(400).send(networkObj.error);
@@ -315,7 +315,7 @@ const grantAccessToDoctor = async (req, res) => {
     // Invoke the smart contract function
     const networkObj = await network.connectToNetwork(req.headers.username);
     if (networkObj.error) return res.status(400).send(networkObj.error);
-    args = [JSON.stringify(args)];
+   
     console.log("Invoking smart  grantAccessToDoctor")
     const response2 = await network.invoke(
       networkObj,
